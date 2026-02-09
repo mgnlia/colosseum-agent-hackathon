@@ -1,231 +1,282 @@
-"""
-AI-Powered Liquidation Prevention Agent
-Main orchestration loop using LangGraph and Claude API
-"""
+"""SolShield Agent — Main entry point
 
+Autonomous AI agent that monitors Solana DeFi positions
+and prevents liquidations using Claude AI analysis.
+"""
 import asyncio
-import os
-from typing import Dict, List, Optional
-from dataclasses import dataclass
-from web3 import Web3
-from anthropic import Anthropic
 import json
-from datetime import datetime
+import os
+import signal
+import sys
+import time
+from pathlib import Path
 
-from .monitor import PositionMonitor
-from .analyzer import RiskAnalyzer
-from .executor import RebalanceExecutor
-from .config import Config
+import structlog
 
-@dataclass
-class UserPosition:
-    """User DeFi position data"""
-    address: str
-    protocol: str
-    health_factor: float
-    total_collateral: float
-    total_debt: float
-    at_risk: bool
-    timestamp: datetime
+from config import get_config, AppConfig
+from protocols import KaminoAdapter, MarginFiAdapter, SolendAdapter, PositionData
+from protocols.base import RiskLevel
+from analyzer import ClaudeAnalyzer, AnalysisResult
+from executor import RebalanceExecutor
+from activity_logger import ActivityLogger
 
-class LiquidationPreventionAgent:
-    """
-    Main AI agent that monitors DeFi positions and prevents liquidations
-    using Claude API for intelligent decision making
-    """
-    
-    def __init__(self, config: Config):
+# Configure structured logging
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.add_log_level,
+        structlog.dev.ConsoleRenderer(),
+    ]
+)
+logger = structlog.get_logger()
+
+
+class SolShieldAgent:
+    """Main agent orchestrator"""
+
+    def __init__(self, config: AppConfig, dry_run: bool = True):
         self.config = config
-        self.web3 = Web3(Web3.HTTPProvider(config.rpc_url))
-        self.anthropic = Anthropic(api_key=config.anthropic_api_key)
-        
-        # Initialize components
-        self.monitor = PositionMonitor(self.web3, config)
-        self.analyzer = RiskAnalyzer(config)
-        self.executor = RebalanceExecutor(self.web3, config)
-        
-        # State
-        self.monitored_users: List[str] = []
-        self.last_check: Dict[str, datetime] = {}
-        
-    async def start(self):
-        """Start the agent monitoring loop"""
-        print(f"🤖 Starting Liquidation Prevention Agent on {self.config.network}")
-        print(f"📊 Monitoring interval: {self.config.check_interval}s")
-        
-        while True:
-            try:
-                await self.monitoring_cycle()
-                await asyncio.sleep(self.config.check_interval)
-            except Exception as e:
-                print(f"❌ Error in monitoring cycle: {e}")
-                await asyncio.sleep(60)  # Wait before retry
-    
-    async def monitoring_cycle(self):
-        """Execute one monitoring cycle"""
-        print(f"\n🔍 Monitoring cycle at {datetime.now().isoformat()}")
-        
-        # Get all monitored users
-        users = await self.monitor.get_monitored_users()
-        
-        for user_address in users:
-            try:
-                await self.check_user_position(user_address)
-            except Exception as e:
-                print(f"❌ Error checking user {user_address}: {e}")
-    
-    async def check_user_position(self, user_address: str):
-        """Check a single user's position across all protocols"""
-        print(f"\n👤 Checking user: {user_address}")
-        
-        # Get position data from all protocols
-        positions = await self.monitor.get_user_positions(user_address)
-        
-        for position in positions:
-            if position.at_risk:
-                print(f"⚠️  RISK DETECTED: {position.protocol} - Health Factor: {position.health_factor:.2f}")
-                
-                # Use Claude to analyze and recommend action
-                recommendation = await self.get_claude_recommendation(position)
-                
-                if recommendation["action"] == "rebalance":
-                    print(f"🔄 Claude recommends rebalancing")
-                    await self.execute_rebalance(position, recommendation)
-                elif recommendation["action"] == "monitor":
-                    print(f"👀 Claude recommends continued monitoring")
-                else:
-                    print(f"✅ No action needed")
-    
-    async def get_claude_recommendation(self, position: UserPosition) -> Dict:
-        """
-        Use Claude API to analyze position and recommend action
-        """
-        prompt = f"""You are an expert DeFi risk analyst. Analyze this position and recommend an action.
+        self.dry_run = dry_run
+        self.running = False
 
-Position Details:
-- Protocol: {position.protocol}
-- Health Factor: {position.health_factor}
-- Total Collateral: ${position.total_collateral:,.2f}
-- Total Debt: ${position.total_debt:,.2f}
-- Current Status: {"AT RISK" if position.at_risk else "HEALTHY"}
+        # Initialize protocol adapters
+        self.adapters = [
+            KaminoAdapter(config.solana.rpc_url, config.solana.helius_api_key),
+            MarginFiAdapter(config.solana.rpc_url),
+            SolendAdapter(config.solana.rpc_url),
+        ]
 
-Context:
-- Health factor below 1.2 is dangerous (liquidation at 1.0)
-- Rebalancing costs gas + flash loan fees (~0.09%)
-- User preference: maintain position, avoid liquidation
+        # Initialize AI analyzer
+        self.analyzer = ClaudeAnalyzer(
+            api_key=config.ai.anthropic_api_key,
+            model=config.ai.model,
+        )
 
-Analyze the risk level and recommend ONE of:
-1. "rebalance" - Execute immediate rebalancing to increase health factor
-2. "monitor" - Continue monitoring, not urgent yet
-3. "none" - Position is healthy
+        # Initialize executor
+        self.executor = RebalanceExecutor(
+            rpc_url=config.solana.rpc_url,
+            wallet_api_key=config.wallet.api_key,
+            wallet_id=config.wallet.wallet_id,
+            dry_run=dry_run,
+        )
 
-Respond in JSON format:
-{{
-  "action": "rebalance|monitor|none",
-  "reasoning": "brief explanation",
-  "urgency": "low|medium|high|critical",
-  "recommended_amount": <amount to rebalance in USD>
-}}
-"""
+        # Initialize activity logger
+        self.activity_logger = ActivityLogger(
+            log_dir=config.log_dir,
+            agent_name="solshield",
+        )
 
-        try:
-            message = self.anthropic.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=1024,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
-            )
-            
-            response_text = message.content[0].text
-            
-            # Parse JSON response
-            recommendation = json.loads(response_text)
-            
-            # Log Claude's reasoning
-            print(f"\n🧠 Claude Analysis:")
-            print(f"   Action: {recommendation['action']}")
-            print(f"   Urgency: {recommendation['urgency']}")
-            print(f"   Reasoning: {recommendation['reasoning']}")
-            
-            # Log to attribution file
-            self._log_ai_decision(position, recommendation)
-            
-            return recommendation
-            
-        except Exception as e:
-            print(f"❌ Error getting Claude recommendation: {e}")
-            # Fallback to rule-based decision
-            return self._fallback_decision(position)
-    
-    def _fallback_decision(self, position: UserPosition) -> Dict:
-        """Fallback rule-based decision if Claude API fails"""
-        if position.health_factor < 1.15:
-            return {
-                "action": "rebalance",
-                "reasoning": "Health factor critically low (fallback rule)",
-                "urgency": "critical",
-                "recommended_amount": position.total_debt * 0.2
-            }
-        elif position.health_factor < 1.3:
-            return {
-                "action": "monitor",
-                "reasoning": "Health factor low but not critical (fallback rule)",
-                "urgency": "medium",
-                "recommended_amount": 0
-            }
-        else:
-            return {
-                "action": "none",
-                "reasoning": "Health factor acceptable (fallback rule)",
-                "urgency": "low",
-                "recommended_amount": 0
-            }
-    
-    async def execute_rebalance(self, position: UserPosition, recommendation: Dict):
-        """Execute the rebalancing transaction"""
-        try:
-            print(f"\n🔄 Executing rebalance for {position.address}")
-            
-            result = await self.executor.execute_rebalance(
-                user_address=position.address,
-                protocol=position.protocol,
-                amount=recommendation["recommended_amount"]
-            )
-            
-            if result["success"]:
-                print(f"✅ Rebalance successful!")
-                print(f"   Tx: {result['tx_hash']}")
-                print(f"   New Health Factor: {result['new_health_factor']:.2f}")
-            else:
-                print(f"❌ Rebalance failed: {result['error']}")
-                
-        except Exception as e:
-            print(f"❌ Error executing rebalance: {e}")
-    
-    def _log_ai_decision(self, position: UserPosition, recommendation: Dict):
-        """Log AI decision to attribution file for hackathon compliance"""
-        log_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "model": "claude-3-5-sonnet-20241022",
-            "position": {
-                "user": position.address,
-                "protocol": position.protocol,
-                "health_factor": position.health_factor,
-            },
-            "recommendation": recommendation
+        # Stats
+        self.stats = {
+            "cycles": 0,
+            "positions_monitored": 0,
+            "analyses_performed": 0,
+            "rebalances_executed": 0,
+            "liquidations_prevented": 0,
+            "total_value_protected": 0.0,
+            "start_time": time.time(),
         }
-        
-        log_file = "docs/ai-attribution.jsonl"
-        with open(log_file, "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
+
+        # Tracked wallets
+        self.watched_wallets: list[str] = []
+
+    async def start(self, wallets: list[str] | None = None):
+        """Start the monitoring loop"""
+        self.running = True
+        self.watched_wallets = wallets or []
+
+        logger.info(
+            "solshield_starting",
+            wallets=len(self.watched_wallets),
+            dry_run=self.dry_run,
+            check_interval=self.config.monitoring.check_interval_seconds,
+        )
+
+        # Log startup activity
+        await self.activity_logger.log_activity(
+            action="agent_start",
+            details={
+                "wallets": len(self.watched_wallets),
+                "protocols": ["kamino", "marginfi", "solend"],
+                "dry_run": self.dry_run,
+            },
+        )
+
+        print(self._banner())
+
+        try:
+            while self.running:
+                await self._monitoring_cycle()
+                await asyncio.sleep(self.config.monitoring.check_interval_seconds)
+        except asyncio.CancelledError:
+            logger.info("agent_cancelled")
+        finally:
+            await self.shutdown()
+
+    async def _monitoring_cycle(self):
+        """Single monitoring cycle: fetch → analyze → execute"""
+        cycle_start = time.time()
+        self.stats["cycles"] += 1
+
+        logger.info("monitoring_cycle_start", cycle=self.stats["cycles"])
+
+        all_positions: list[PositionData] = []
+
+        # 1. Fetch positions from all protocols
+        for wallet in self.watched_wallets:
+            for adapter in self.adapters:
+                try:
+                    positions = await adapter.get_positions(wallet)
+                    all_positions.extend(positions)
+                    protocol_name = await adapter.get_protocol_name()
+                    if positions:
+                        logger.info(
+                            "positions_found",
+                            protocol=protocol_name,
+                            wallet=wallet[:8] + "...",
+                            count=len(positions),
+                        )
+                except Exception as e:
+                    logger.error("adapter_error", error=str(e))
+
+        self.stats["positions_monitored"] = len(all_positions)
+
+        if not all_positions:
+            logger.info("no_positions_found", wallets=len(self.watched_wallets))
+            return
+
+        # 2. Analyze positions that need attention
+        at_risk = [
+            p for p in all_positions
+            if p.risk_level in (RiskLevel.WARNING, RiskLevel.CRITICAL, RiskLevel.EMERGENCY)
+        ]
+
+        if at_risk:
+            logger.warning("at_risk_positions", count=len(at_risk))
+
+        for position in at_risk:
+            # 3. AI Analysis
+            analysis = await self.analyzer.analyze_position(position)
+            self.stats["analyses_performed"] += 1
+
+            await self.activity_logger.log_activity(
+                action="risk_analysis",
+                details=analysis.to_dict(),
+            )
+
+            # 4. Execute rebalance if needed
+            if analysis.needs_action and analysis.confidence >= 0.7:
+                result = await self.executor.execute_rebalance(position, analysis)
+
+                if result.success:
+                    self.stats["rebalances_executed"] += 1
+                    self.stats["liquidations_prevented"] += 1
+                    self.stats["total_value_protected"] += position.total_collateral_usd
+
+                    logger.info(
+                        "rebalance_executed",
+                        strategy=result.strategy.value,
+                        amount=result.amount_usd,
+                        tx=result.tx_signature,
+                    )
+
+                await self.activity_logger.log_activity(
+                    action="rebalance_execution",
+                    details=result.to_dict(),
+                )
+
+        # Log cycle summary
+        cycle_duration = time.time() - cycle_start
+        logger.info(
+            "monitoring_cycle_complete",
+            cycle=self.stats["cycles"],
+            positions=len(all_positions),
+            at_risk=len(at_risk),
+            duration_s=f"{cycle_duration:.2f}",
+        )
+
+    async def add_wallet(self, wallet_address: str):
+        """Add a wallet to monitor"""
+        if wallet_address not in self.watched_wallets:
+            self.watched_wallets.append(wallet_address)
+            logger.info("wallet_added", wallet=wallet_address[:8] + "...")
+
+    async def remove_wallet(self, wallet_address: str):
+        """Remove a wallet from monitoring"""
+        if wallet_address in self.watched_wallets:
+            self.watched_wallets.remove(wallet_address)
+            logger.info("wallet_removed", wallet=wallet_address[:8] + "...")
+
+    def get_stats(self) -> dict:
+        """Get agent statistics"""
+        uptime = time.time() - self.stats["start_time"]
+        return {
+            **self.stats,
+            "uptime_seconds": uptime,
+            "uptime_human": f"{uptime/3600:.1f}h",
+        }
+
+    async def shutdown(self):
+        """Graceful shutdown"""
+        self.running = False
+        logger.info("shutting_down", stats=self.get_stats())
+
+        await self.activity_logger.log_activity(
+            action="agent_shutdown",
+            details=self.get_stats(),
+        )
+
+        for adapter in self.adapters:
+            await adapter.close()
+        await self.executor.close()
+
+    def _banner(self) -> str:
+        return """
+╔══════════════════════════════════════════════════════╗
+║                                                      ║
+║   🛡️  SolShield — Liquidation Prevention Agent       ║
+║                                                      ║
+║   Protocols: Kamino | MarginFi | Solend              ║
+║   AI Engine: Claude (Anthropic)                      ║
+║   Network:   Solana Devnet                           ║
+║                                                      ║
+║   Monitoring {wallets} wallet(s)                     ║
+║   Check interval: {interval}s                        ║
+║   Mode: {mode}                                       ║
+║                                                      ║
+╚══════════════════════════════════════════════════════╝
+""".format(
+            wallets=len(self.watched_wallets),
+            interval=self.config.monitoring.check_interval_seconds,
+            mode="DRY RUN" if self.dry_run else "LIVE",
+        )
+
 
 async def main():
     """Main entry point"""
-    config = Config.from_env()
-    agent = LiquidationPreventionAgent(config)
-    await agent.start()
+    config = get_config()
+
+    # Parse CLI arguments
+    dry_run = "--live" not in sys.argv
+    wallets = []
+
+    for i, arg in enumerate(sys.argv):
+        if arg == "--wallet" and i + 1 < len(sys.argv):
+            wallets.append(sys.argv[i + 1])
+
+    if not wallets:
+        # Default demo wallet for testing
+        wallets = [os.getenv("DEMO_WALLET", "11111111111111111111111111111111")]
+
+    agent = SolShieldAgent(config=config, dry_run=dry_run)
+
+    # Handle graceful shutdown
+    loop = asyncio.get_event_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: asyncio.create_task(agent.shutdown()))
+
+    await agent.start(wallets=wallets)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

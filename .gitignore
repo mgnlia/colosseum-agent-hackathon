@@ -2,56 +2,35 @@
 node_modules/
 __pycache__/
 *.pyc
-.Python
+.venv/
 venv/
-env/
-.venv
 
-# Environment variables
+# Environment
 .env
 .env.local
-.env.*.local
 
-# Build outputs
+# Build artifacts
+target/
 dist/
 build/
-out/
-cache/
-artifacts/
-typechain/
-typechain-types/
+.next/
+
+# Anchor
+programs/target/
+.anchor/
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Hardhat
-coverage/
-coverage.json
+# Logs
 *.log
+agent/logs/*.json
 
-# Graph
-generated/
-build/
-
-# Frontend
-.next/
-.nuxt/
-.cache/
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-
-# Misc
-*.pid
-*.seed
-*.pid.lock
+# Keys (NEVER commit)
+*.keypair
+*.key

@@ -1,225 +1,184 @@
-# 🤖 Autonomous Office Protocol (AOP)
+# 🛡️ SolShield — AI-Powered Liquidation Prevention Agent for Solana
 
-**Colosseum Agent Hackathon Submission**
+> **Colosseum Agent Hackathon 2026** | $100K USDC Prize Pool
 
-An autonomous AI agent protocol on Solana that coordinates multi-agent workflows for DeFi operations, powered by Claude AI and AgentWallet.
+An autonomous AI agent that monitors DeFi lending positions across Solana protocols (Kamino, MarginFi, Solend) and proactively prevents liquidations using Claude AI for intelligent decision-making and Jupiter-powered rebalancing.
 
-## 🎯 Overview
+## 🎯 Problem
 
-The Autonomous Office Protocol (AOP) is a Solana-native AI agent system that demonstrates autonomous decision-making, on-chain activity logging, and multi-agent coordination for DeFi risk management.
+DeFi users on Solana lose millions annually to liquidations:
+- **No 24/7 monitoring** — positions drift while users sleep
+- **Delayed reactions** — market volatility moves faster than humans
+- **Multi-protocol complexity** — managing positions across Kamino, MarginFi, Solend simultaneously
+- **High cognitive load** — calculating optimal rebalancing strategies in real-time
 
-**Hackathon**: [Colosseum Agent Hackathon](https://colosseum.com/agent-hackathon/)  
-**Prize Pool**: $100K+ USDC  
-**Deadline**: February 12, 2026
+## 💡 Solution
+
+**SolShield** is an autonomous AI agent that:
+
+1. **Monitors** user lending positions across Solana DeFi protocols in real-time
+2. **Analyzes** risk using Claude AI's reasoning capabilities with on-chain data
+3. **Executes** autonomous rebalancing via Jupiter swaps before liquidation occurs
+4. **Logs** all AI decisions transparently for auditability
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                 Claude AI Agent Core                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │ Monitor  │→ │ Analyze  │→ │ Execute  │             │
-│  │ Positions│  │ (Claude) │  │ Actions  │             │
-│  └──────────┘  └──────────┘  └──────────┘             │
-└─────────────────────────────────────────────────────────┘
-                       ↓ ↑
-┌─────────────────────────────────────────────────────────┐
-│              AgentWallet (Solana)                        │
-│  ┌──────────────────┐  ┌──────────────────┐           │
-│  │ Activity Logger  │  │ Transaction      │           │
-│  │ (SHA256+Ed25519) │  │ Executor         │           │
-│  └──────────────────┘  └──────────────────┘           │
-└─────────────────────────────────────────────────────────┘
-                       ↓ ↑
-┌─────────────────────────────────────────────────────────┐
-│           Solana DeFi Protocols                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │ Solend   │  │ Kamino   │  │ Marinade │             │
-│  └──────────┘  └──────────┘  └──────────┘             │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    SolShield AI Agent                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ Position  │→ │ Claude AI │→ │ Strategy │→ │ TX       │   │
+│  │ Monitor   │  │ Analyzer  │  │ Engine   │  │ Executor │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                    ↓                              ↑
+┌─────────────────────────────────────────────────────────────┐
+│                  Solana On-Chain Layer                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ Kamino   │  │ MarginFi │  │ Solend   │  │ Jupiter  │   │
+│  │ Lending  │  │ Protocol │  │ V2       │  │ Swap     │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                    ↓                              ↑
+┌─────────────────────────────────────────────────────────────┐
+│                  Anchor Programs (On-Chain)                  │
+│  ┌──────────────────┐  ┌──────────────────────────────┐    │
+│  │ SolShield        │  │ Position Registry            │    │
+│  │ Orchestrator     │  │ (User position tracking)     │    │
+│  └──────────────────┘  └──────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## ✨ Features
+## 🚀 Features
 
-### Core Capabilities
-- 🤖 **Autonomous AI Agent**: Claude-powered decision making for DeFi operations
-- 🔗 **Solana Native**: Built on Solana for high-speed, low-cost transactions
-- 📊 **Activity Logging**: SHA256 + Ed25519 cryptographic activity verification
-- 💰 **DeFi Integration**: Monitors Solend, Kamino, Marinade positions
-- 🎯 **Risk Management**: Proactive liquidation prevention on Solana
+### Core
+- ✅ **Multi-Protocol Monitoring** — Kamino, MarginFi, Solend position tracking
+- ✅ **Claude AI Risk Analysis** — Intelligent health factor assessment with market context
+- ✅ **Jupiter-Powered Rebalancing** — Optimal swap routing for collateral adjustments
+- ✅ **Autonomous Execution** — Fully autonomous decision-making loop
+- ✅ **AgentWallet Integration** — Secure Solana wallet management
 
-### AgentWallet Integration
-- ✅ Cryptographic activity signing (SHA256 + Ed25519)
-- ✅ On-chain activity logging to Colosseum API
-- ✅ Autonomous transaction execution
-- ✅ Multi-signature support for security
+### Solana-Native
+- ✅ **Anchor Programs** — On-chain position registry and orchestration
+- ✅ **Helius RPC** — Real-time WebSocket position monitoring
+- ✅ **SPL Token Support** — Native handling of all Solana tokens
+- ✅ **Transaction Optimization** — Priority fees and compute budget management
 
-## 🚀 Quick Start
+### AI Attribution
+- ✅ **Decision Logging** — Every AI decision logged with reasoning
+- ✅ **Cryptographic Verification** — Ed25519 signed activity logs
+- ✅ **Transparent Audit Trail** — Full history of agent actions
+
+## 📦 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Smart Contracts | Anchor Framework (Rust) |
+| AI Agent | Python 3.11+, Anthropic Claude API |
+| Blockchain | Solana, @solana/web3.js, solders |
+| DeFi Protocols | Kamino, MarginFi, Solend |
+| Swap Routing | Jupiter Aggregator |
+| RPC/Indexing | Helius |
+| Wallet | AgentWallet |
+| Dashboard | Next.js, TailwindCSS |
+
+## 🛠️ Quick Start
 
 ### Prerequisites
-```bash
-node >= 18.0.0
-python >= 3.11
-solana-cli >= 1.18.0
-anchor-cli >= 0.29.0
-```
+- Node.js >= 18
+- Python >= 3.11
+- Rust + Anchor CLI
+- Solana CLI
 
-### Installation
+### 1. Clone & Install
 
-1. **Clone Repository**
 ```bash
 git clone https://github.com/mgnlia/colosseum-agent-hackathon.git
 cd colosseum-agent-hackathon
+
+# Install Anchor dependencies
+cd programs && anchor build && cd ..
+
+# Install agent dependencies  
+cd agent && pip install -r requirements.txt && cd ..
+
+# Install dashboard
+cd dashboard && npm install && cd ..
 ```
 
-2. **Install Dependencies**
-```bash
-# Python dependencies
-pip install -r requirements.txt
+### 2. Configure
 
-# Node dependencies (for Anchor)
-npm install
-```
-
-3. **Configure Environment**
 ```bash
 cp .env.example .env
+# Edit .env with your keys:
+# - ANTHROPIC_API_KEY
+# - HELIUS_API_KEY  
+# - AGENT_WALLET_API_KEY
 ```
 
-Edit `.env`:
-```env
-# Colosseum API
-COLOSSEUM_API_KEY=your_api_key_here
-COLOSSEUM_CLAIM_CODE=your_claim_code
-
-# Solana
-SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_PRIVATE_KEY=your_private_key
-
-# Claude AI
-ANTHROPIC_API_KEY=your_claude_key
-
-# AgentWallet
-AGENT_WALLET_ADDRESS=your_wallet_address
-```
-
-4. **Run Agent**
-```bash
-python src/main.py
-```
-
-## 📊 Activity Logging
-
-All agent activities are cryptographically signed and logged:
-
-```python
-{
-    "timestamp": "2026-02-09T10:00:00Z",
-    "activity_type": "position_monitor",
-    "data": {
-        "protocol": "solend",
-        "user": "wallet_address",
-        "health_factor": 1.45
-    },
-    "signature": "ed25519_signature",
-    "hash": "sha256_hash"
-}
-```
-
-Activities are automatically pushed to Colosseum API for leaderboard tracking.
-
-## 🎯 Competition Strategy
-
-### Activity Generation
-- **Target**: 500+ activities over 3 days
-- **Rate**: ~7 activities/hour
-- **Types**:
-  - Position monitoring (every 10 min)
-  - Risk analysis (Claude AI decisions)
-  - Transaction executions
-  - Forum interactions
-  - Dashboard updates
-
-### Differentiation
-1. **Production-Ready**: Full CI/CD, testing, documentation
-2. **Real DeFi Integration**: Actual Solana protocol interactions
-3. **Transparent AI**: All Claude decisions logged with reasoning
-4. **Community Engagement**: Active forum participation
-
-## 🏆 Hackathon Deliverables
-
-- ✅ **GitHub Repository**: Clean git history, meaningful commits
-- ✅ **Live Agent**: Deployed on Solana devnet
-- ✅ **Activity Dashboard**: Real-time activity visualization
-- ✅ **Documentation**: Comprehensive setup and usage guides
-- ✅ **Demo Video**: 2-4 minute walkthrough
-- ✅ **Forum Presence**: Active community engagement
-
-## 📈 Current Status
-
-**Registration**: ⏳ Pending API key  
-**Development**: 🚧 In Progress  
-**Activities Logged**: 0 on-chain, 12 ready  
-**Leaderboard Position**: Not yet ranked
-
-## 🛠️ Tech Stack
-
-- **Blockchain**: Solana (Anchor Framework)
-- **AI**: Anthropic Claude 3.5 Sonnet
-- **Agent Framework**: Custom Python agent with AgentWallet
-- **DeFi Protocols**: Solend, Kamino, Marinade
-- **Activity Logging**: SHA256 + Ed25519 signatures
-- **Frontend**: Next.js + TypeScript + Tailwind CSS
-- **Deployment**: Vercel (frontend), Solana devnet (programs)
-
-## 📁 Project Structure
-
-```
-colosseum-agent-hackathon/
-├── src/
-│   ├── agent/           # Core AI agent logic
-│   ├── wallet/          # AgentWallet integration
-│   ├── protocols/       # Solend, Kamino, Marinade adapters
-│   ├── logger/          # Activity logging system
-│   └── main.py          # Agent entry point
-├── programs/            # Anchor Solana programs
-├── dashboard/           # Next.js monitoring UI
-├── scripts/             # Deployment and utility scripts
-├── tests/               # Test suite
-└── docs/                # Documentation
-```
-
-## 🧪 Testing
+### 3. Run the Agent
 
 ```bash
-# Run all tests
-pytest tests/
-
-# Run specific test suite
-pytest tests/test_agent.py
-
-# Run with coverage
-pytest --cov=src tests/
+cd agent
+python main.py
 ```
 
-## 📝 License
+### 4. Launch Dashboard
 
-MIT License - see [LICENSE](LICENSE)
+```bash
+cd dashboard
+npm run dev
+```
 
-## 🔗 Links
+## 📊 How It Works
 
-- **GitHub**: https://github.com/mgnlia/colosseum-agent-hackathon
-- **Colosseum**: https://colosseum.com/agent-hackathon/
-- **Documentation**: [docs/](docs/)
-- **Dashboard**: [Coming soon]
+### 1. Position Discovery
+The agent queries Solana DeFi protocols to find user lending positions:
+- Fetches obligation accounts from Kamino/Solend
+- Reads MarginFi margin accounts
+- Calculates real-time health factors
 
-## 🙏 Acknowledgments
+### 2. Risk Analysis (Claude AI)
+When a position's health factor drops below threshold:
+```
+Health Factor < 1.5 → WARN (monitor closely)
+Health Factor < 1.2 → CRITICAL (prepare rebalance)
+Health Factor < 1.05 → EMERGENCY (execute immediately)
+```
 
-- Colosseum for hosting the hackathon
-- Anthropic for Claude AI API
-- Solana Foundation for the ecosystem
-- AgentWallet team for the framework
+Claude analyzes:
+- Current market conditions and volatility
+- Historical liquidation patterns
+- Optimal rebalancing strategy
+- Gas cost vs. liquidation penalty tradeoff
 
----
+### 3. Autonomous Rebalancing
+The agent executes the optimal strategy:
+- **Collateral Top-up** — Add more collateral via Jupiter swap
+- **Debt Repayment** — Partial debt repayment to improve health
+- **Position Migration** — Move to a protocol with better rates
+- **Emergency Unwind** — Full position closure if critically at risk
 
-**Built for Colosseum Agent Hackathon 2026**
+### 4. Verification
+All actions are logged with:
+- Transaction signatures
+- AI reasoning traces
+- Cryptographic attestation via AgentWallet
+
+## 🏆 Why SolShield Wins
+
+| Feature | SolShield | Others |
+|---------|-----------|--------|
+| Multi-protocol | ✅ Kamino + MarginFi + Solend | Single protocol |
+| AI-powered | ✅ Claude reasoning | Rule-based |
+| Autonomous | ✅ Full loop | Manual alerts |
+| On-chain programs | ✅ Anchor | Off-chain only |
+| Audit trail | ✅ Cryptographic | None |
+
+## 📄 License
+
+MIT
+
+## 🤖 AI Attribution
+
+This project was built by an autonomous AI agent using Claude (Anthropic) for both code generation and runtime decision-making. All AI decisions are logged in `agent/logs/` with full reasoning traces.

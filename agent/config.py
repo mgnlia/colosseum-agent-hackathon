@@ -1,77 +1,92 @@
-"""
-Configuration for the Liquidation Prevention Agent
-"""
-
+"""SolShield Agent Configuration"""
 import os
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 @dataclass
-class Config:
-    """Agent configuration"""
-    
-    # Network Configuration
-    network: str = os.getenv("NETWORK", "sepolia")
-    rpc_url: str = os.getenv("SEPOLIA_RPC_URL", "https://rpc.sepolia.org")
-    
-    # Contract Addresses
-    liquidation_prevention_address: Optional[str] = os.getenv("LIQUIDATION_PREVENTION_ADDRESS")
-    aave_adapter_address: Optional[str] = os.getenv("AAVE_ADAPTER_ADDRESS")
-    compound_adapter_address: Optional[str] = os.getenv("COMPOUND_ADAPTER_ADDRESS")
-    flash_loan_rebalancer_address: Optional[str] = os.getenv("FLASH_LOAN_REBALANCER_ADDRESS")
-    
-    # AI Configuration
+class SolanaConfig:
+    cluster: str = os.getenv("SOLANA_CLUSTER", "devnet")
+    helius_api_key: str = os.getenv("HELIUS_API_KEY", "")
+    rpc_url: str = os.getenv(
+        "HELIUS_RPC_URL",
+        "https://api.devnet.solana.com"
+    )
+    ws_url: str = os.getenv(
+        "HELIUS_WS_URL",
+        "wss://api.devnet.solana.com"
+    )
+
+
+@dataclass
+class AIConfig:
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
-    claude_model: str = "claude-3-5-sonnet-20241022"
-    max_tokens: int = 1024
-    
-    # Monitoring Configuration
-    check_interval: int = int(os.getenv("CHECK_INTERVAL", "60"))  # seconds
-    min_health_factor: float = float(os.getenv("MIN_HEALTH_FACTOR", "1.5"))
-    target_health_factor: float = float(os.getenv("TARGET_HEALTH_FACTOR", "2.0"))
-    
-    # Risk Thresholds
-    critical_threshold: float = 1.15  # Immediate action required
-    warning_threshold: float = 1.3    # Monitor closely
-    safe_threshold: float = 1.5       # Healthy position
-    
-    # Execution Configuration
-    max_gas_price_gwei: int = 100
-    slippage_tolerance: float = 0.01  # 1%
-    
-    # Logging
-    log_level: str = os.getenv("LOG_LEVEL", "INFO")
-    ai_attribution_file: str = "docs/ai-attribution.jsonl"
-    
-    @classmethod
-    def from_env(cls) -> "Config":
-        """Create config from environment variables"""
-        return cls()
-    
-    def validate(self) -> bool:
-        """Validate configuration"""
-        if not self.anthropic_api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set")
-        
-        if not self.liquidation_prevention_address:
-            raise ValueError("LIQUIDATION_PREVENTION_ADDRESS not set")
-        
-        if self.min_health_factor <= 1.0:
-            raise ValueError("MIN_HEALTH_FACTOR must be > 1.0")
-        
-        if self.target_health_factor <= self.min_health_factor:
-            raise ValueError("TARGET_HEALTH_FACTOR must be > MIN_HEALTH_FACTOR")
-        
-        return True
-    
-    def get_network_rpc(self) -> str:
-        """Get RPC URL for current network"""
-        network_rpcs = {
-            "sepolia": os.getenv("SEPOLIA_RPC_URL", "https://rpc.sepolia.org"),
-            "baseSepolia": os.getenv("BASE_SEPOLIA_RPC_URL", "https://sepolia.base.org"),
-            "arbitrumSepolia": os.getenv("ARBITRUM_SEPOLIA_RPC_URL", "https://sepolia-rollup.arbitrum.io/rpc"),
-        }
-        return network_rpcs.get(self.network, self.rpc_url)
+    model: str = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+    max_tokens: int = 4096
+    temperature: float = 0.1  # Low temperature for consistent risk analysis
+
+
+@dataclass
+class AgentWalletConfig:
+    api_key: str = os.getenv("AGENT_WALLET_API_KEY", "")
+    wallet_id: str = os.getenv("AGENT_WALLET_ID", "")
+    base_url: str = "https://agentwallet.mcpay.tech/api"
+
+
+@dataclass
+class MonitoringConfig:
+    check_interval_seconds: int = int(os.getenv("CHECK_INTERVAL_SECONDS", "30"))
+    health_factor_warn: float = float(os.getenv("HEALTH_FACTOR_WARN", "1.5"))
+    health_factor_critical: float = float(os.getenv("HEALTH_FACTOR_CRITICAL", "1.2"))
+    health_factor_emergency: float = float(os.getenv("HEALTH_FACTOR_EMERGENCY", "1.05"))
+    max_rebalance_attempts: int = 3
+    rebalance_cooldown_seconds: int = 60
+
+
+@dataclass
+class ProtocolAddresses:
+    """Solana program IDs for DeFi protocols"""
+    kamino_program: str = os.getenv(
+        "KAMINO_PROGRAM_ID",
+        "KLend2g3cP87ber41GRRLYPqxQ1p57Y5MR8D68Lds"
+    )
+    marginfi_program: str = os.getenv(
+        "MARGINFI_PROGRAM_ID",
+        "MFv2hWf31Z9kbCa1snEPYctwafyhdJnV4QSdzCrRKg"
+    )
+    solend_program: str = os.getenv(
+        "SOLEND_PROGRAM_ID",
+        "So1endDq2YkqhipRh3WViPa8hFMqRV1JimkXg5H2RGD"
+    )
+    jupiter_program: str = os.getenv(
+        "JUPITER_PROGRAM_ID",
+        "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+    )
+    solshield_program: str = os.getenv(
+        "SOLSHIELD_PROGRAM_ID",
+        "SoLShie1dAiPrevention1111111111111111111111"
+    )
+
+
+@dataclass
+class ColosseumConfig:
+    api_key: str = os.getenv("COLOSSEUM_API_KEY", "")
+    agent_name: str = os.getenv("COLOSSEUM_AGENT_NAME", "solshield")
+    api_base: str = "https://agents.colosseum.com/api"
+
+
+@dataclass
+class AppConfig:
+    solana: SolanaConfig = field(default_factory=SolanaConfig)
+    ai: AIConfig = field(default_factory=AIConfig)
+    wallet: AgentWalletConfig = field(default_factory=AgentWalletConfig)
+    monitoring: MonitoringConfig = field(default_factory=MonitoringConfig)
+    protocols: ProtocolAddresses = field(default_factory=ProtocolAddresses)
+    colosseum: ColosseumConfig = field(default_factory=ColosseumConfig)
+    log_dir: str = os.getenv("LOG_DIR", "agent/logs")
+
+
+def get_config() -> AppConfig:
+    return AppConfig()
