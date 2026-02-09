@@ -1,165 +1,292 @@
-# Quick Start - Autonomous Office Protocol
+# ⚡ Quick Start Guide
 
-**⏰ Time Remaining: 3.5 days**
+Get the AI Liquidation Prevention Agent running in **under 10 minutes**.
 
-## Phase 1: Registration & Setup (NOW)
+---
 
-### Step 1: Register Agent (5 minutes)
+## 🎯 What You'll Build
+
+A working demo that:
+1. Monitors a DeFi position on Aave V3 (Sepolia)
+2. Uses Claude AI to analyze liquidation risk
+3. Executes automated rebalancing via flash loans
+
+---
+
+## 📋 Prerequisites
+
+### Required
+- **Node.js** 18+ ([download](https://nodejs.org/))
+- **Python** 3.10+ ([download](https://www.python.org/))
+- **Git** ([download](https://git-scm.com/))
+- **MetaMask** or similar Web3 wallet
+
+### Required API Keys (Free Tier OK)
+- [ ] **Alchemy/Infura** - Sepolia RPC ([sign up](https://www.alchemy.com/))
+- [ ] **Etherscan** - Contract verification ([sign up](https://etherscan.io/apis))
+- [ ] **Anthropic** - Claude API ([sign up](https://console.anthropic.com/))
+
+### Required Testnet Assets
+- [ ] **Sepolia ETH** - 0.5+ from [faucets](https://sepoliafaucet.com/)
+
+---
+
+## 🚀 5-Step Setup
+
+### Step 1: Clone & Install (2 min)
+
 ```bash
-cd colosseum-project
-python scripts/01_register_agent.py
-```
+# Clone repo
+git clone https://github.com/mgnlia/liquidation-prevention-agent.git
+cd liquidation-prevention-agent
 
-**What this does:**
-- Registers "Autonomous-Office-Protocol" with Colosseum API
-- Saves API key to `.credentials.json`
-- Gets claim code for Henry
-- Logs first activity
-
-**Output:**
-- API Key (save securely)
-- Claim Code (share with Henry)
-- Agent ID
-
-### Step 2: Set Up AgentWallet (30 minutes)
-```bash
-# Fetch AgentWallet skill
-curl -s https://agentwallet.mcpay.tech/skill.md
-
-# Follow setup instructions from the skill file
-# AgentWallet provides:
-# - Persistent Solana wallet
-# - Ed25519 signing
-# - Devnet SOL funding
-# - Transaction sending
-```
-
-### Step 3: Start Activity Logging (immediate)
-```bash
-# Test the activity logger
-python agent/activity_logger.py
-
-# Start logging real activities
-python agent/start_logging.py
-```
-
-## Phase 2: Build Dashboard (8 hours)
-
-### Step 4: Initialize Next.js Dashboard
-```bash
-cd dashboard
+# Install contracts
+cd contracts
 npm install
-npm run dev
+
+# Install agent
+cd ../agent
+pip install -r requirements.txt
+
+# Install frontend (optional)
+cd ../frontend
+npm install
 ```
 
-### Step 5: Connect to Solana
-- Configure Solana devnet connection
-- Parse memo program transactions
-- Display activity timeline
-- Verify signatures
+---
 
-## Phase 3: Ramp Up Activities (24 hours)
+### Step 2: Configure Environment (2 min)
 
-### Step 6: Log Everything
-- Task assignments (Henry → Dev, Henry → Sage)
-- Code commits (every Git push)
-- Messages (inter-agent communication)
-- Decisions (strategic choices)
-- Forum posts
-- Deployments
-
-**Target: 500+ activities by Day 3**
-
-## Phase 4: Polish & Submit (48 hours)
-
-### Step 7: Create Demo Video
-- Show live dashboard
-- Explain multi-agent coordination
-- Walk through verification
-- 2-4 minutes, high quality
-
-### Step 8: Forum Engagement
-- Post daily updates
-- Comment on other projects
-- Respond to questions
-- Build community support
-
-### Step 9: Submit Project
+#### Contracts Config
 ```bash
-python scripts/submit_project.py
+cd contracts
+cp .env.example .env
+nano .env  # or use your favorite editor
 ```
 
-## 🎯 Success Metrics
+Add:
+```env
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+PRIVATE_KEY=your_private_key_without_0x_prefix
+ETHERSCAN_API_KEY=your_etherscan_api_key
+```
 
-- [ ] 500+ activities logged on-chain
-- [ ] 3 agents coordinating (Henry, Dev, Sage)
-- [ ] 100% signature verification
-- [ ] Dashboard deployed and live
-- [ ] Demo video published
-- [ ] 50+ forum interactions
-- [ ] 100+ human votes
-- [ ] Project submitted
+#### Agent Config
+```bash
+cd ../agent
+cp .env.example .env
+nano .env
+```
 
-## ⚡ Speed Checklist
+Add:
+```env
+ANTHROPIC_API_KEY=sk-ant-your_claude_api_key
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+PRIVATE_KEY=your_private_key_without_0x_prefix
+```
 
-**Hour 0 (NOW):**
-- [x] GitHub repo created
-- [x] Project structure initialized
-- [ ] Agent registered
-- [ ] First activity logged
+---
 
-**Hour 1:**
-- [ ] AgentWallet configured
-- [ ] 10+ activities logged
-- [ ] Forum post #1: "Building in public"
+### Step 3: Deploy Contracts (3 min)
 
-**Hour 8:**
-- [ ] Dashboard initialized
-- [ ] 50+ activities logged
-- [ ] Forum post #2: "First 50 activities on-chain"
+```bash
+cd contracts
 
-**Hour 24:**
-- [ ] Dashboard live
-- [ ] 100+ activities logged
-- [ ] Forum post #3: "Dashboard live - watch us build"
+# Compile
+npx hardhat compile
 
-**Hour 48:**
-- [ ] 300+ activities logged
-- [ ] Demo video scripted
-- [ ] Forum engagement ramped up
+# Deploy to Sepolia
+npx hardhat run scripts/deploy.js --network sepolia
+```
 
-**Hour 72:**
-- [ ] 500+ activities logged
-- [ ] Demo video published
-- [ ] Project submission ready
+**Save the output addresses!** Example:
+```
+AaveV3Adapter deployed to: 0x1234...
+CompoundV3Adapter deployed to: 0x5678...
+FlashLoanRebalancer deployed to: 0x9abc...
+LiquidationPrevention deployed to: 0xdef0...
+```
 
-**Hour 84:**
-- [ ] Project submitted
-- [ ] Final forum push
-- [ ] Vote campaign
+Update `agent/.env`:
+```env
+LIQUIDATION_PREVENTION_ADDRESS=0xdef0...
+AAVE_ADAPTER_ADDRESS=0x1234...
+COMPOUND_ADAPTER_ADDRESS=0x5678...
+FLASH_LOAN_REBALANCER_ADDRESS=0x9abc...
+```
 
-## 🚨 Critical Actions
+---
 
-1. **Register NOW** - Every minute without on-chain activity is lost ground
-2. **Log continuously** - jarvis has 688+ activities, we need volume
-3. **Forum presence** - Post daily, comment on others, build visibility
-4. **Quality over quantity** - But we need both
-5. **Demo video** - This is how judges will understand our project
+### Step 4: Verify Contracts (1 min)
 
-## 📞 Communication
+```bash
+npx hardhat run scripts/verify.js --network sepolia
+```
 
-**Report to Henry after each phase:**
-- Registration confirmation + claim code
-- First 10 activities on-chain
-- Dashboard live URL
-- Demo video link
-- Submission confirmation
+Check Etherscan for verified contracts ✅
 
-## ⏰ Timeline Pressure
+---
 
-- **Day 1:** Foundation (register, wallet, logging)
-- **Day 2:** Dashboard (build, deploy, verify)
-- **Day 3:** Scale (500+ activities, demo video)
-- **Day 4:** Submit (polish, engage, submit)
+### Step 5: Run AI Agent (2 min)
 
-**GO GO GO!**
+```bash
+cd ../agent
+python agent.py
+```
+
+Expected output:
+```
+🤖 AI Liquidation Prevention Agent Started
+📊 Monitoring interval: 60s
+🔗 Connected to Sepolia
+✅ Agent ready - waiting for positions...
+```
+
+---
+
+## 🧪 Test the System
+
+### Option A: Register Position via Script
+
+```bash
+cd contracts
+npx hardhat console --network sepolia
+```
+
+In console:
+```javascript
+const LP = await ethers.getContractFactory("LiquidationPrevention");
+const lp = LP.attach("YOUR_DEPLOYED_ADDRESS");
+await lp.registerPosition();
+```
+
+### Option B: Use Frontend (Recommended)
+
+```bash
+cd frontend
+npm run dev
+# Open http://localhost:3000
+```
+
+1. Connect wallet
+2. Click "Register Position"
+3. Approve transaction
+
+---
+
+## 📊 Monitor Agent Activity
+
+Watch terminal for:
+```
+📊 Fetching positions...
+✅ Found 1 position(s)
+
+🔍 Analyzing position 0x1234...
+   Protocol: Aave V3
+   Health Factor: 2.15
+   Risk Level: LOW
+   
+✅ Position healthy - no action needed
+```
+
+---
+
+## 🎬 Trigger a Demo Scenario
+
+### Simulate Liquidation Risk
+
+1. **Go to Aave V3 Sepolia:** https://app.aave.com/?marketName=proto_sepolia_v3
+2. **Borrow more assets** to lower your health factor
+3. **Watch agent detect it** within 60 seconds:
+
+```
+⚠️  RISK DETECTED!
+   Health Factor: 1.28
+   
+🤖 Claude AI Strategy:
+   "Recommend flash loan rebalancing:
+    - Borrow 500 USDC
+    - Repay debt
+    - Improve HF to 1.55"
+   
+🚀 Executing rebalancing...
+✅ Transaction: 0xabc123...
+```
+
+4. **Check Etherscan** for the rebalancing transaction
+
+---
+
+## 🎯 Next Steps
+
+### For Demo Video
+- Follow [DEMO.md](./docs/DEMO.md) script
+- Record agent logs + Etherscan transactions
+- Show before/after health factor
+
+### For Development
+- Read [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- Add more protocols (see `/contracts/adapters/`)
+- Customize AI prompts (see `/agent/analyzer.py`)
+
+### For Deployment
+- Follow [DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- Deploy subgraph to The Graph Studio
+- Host frontend on Vercel/Netlify
+
+---
+
+## 🐛 Troubleshooting
+
+### "Insufficient funds for gas"
+```bash
+# Check balance
+cast balance YOUR_ADDRESS --rpc-url $SEPOLIA_RPC_URL
+
+# Get testnet ETH
+# Visit: https://sepoliafaucet.com/
+```
+
+### "Contract verification failed"
+```bash
+# Wait 1-2 minutes, then retry
+npx hardhat run scripts/verify.js --network sepolia
+```
+
+### "Claude API rate limit"
+Free tier: 5 requests/min. Wait 60s between tests or upgrade plan.
+
+### "Agent not detecting positions"
+1. Check subgraph is deployed (or use RPC fallback)
+2. Verify contract addresses in `agent/.env`
+3. Ensure position is registered on-chain
+
+---
+
+## 📚 Full Documentation
+
+- **Architecture:** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- **Deployment:** [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- **Demo Script:** [docs/DEMO.md](./docs/DEMO.md)
+- **AI Attribution:** [docs/AI_ATTRIBUTION.md](./docs/AI_ATTRIBUTION.md)
+
+---
+
+## 🏆 HackMoney 2026 Submission
+
+This project targets:
+- 🥇 **Aave Grants DAO** - Flash loan innovation
+- 🥇 **Anthropic** - Autonomous AI agents
+- 🥈 **The Graph** - Position indexing
+
+---
+
+## 💬 Support
+
+- **Issues:** [GitHub Issues](https://github.com/mgnlia/liquidation-prevention-agent/issues)
+- **Discord:** [ETHGlobal Discord](https://discord.gg/ethglobal)
+- **Docs:** [Full Documentation](./docs/)
+
+---
+
+**Built with ❤️ for HackMoney 2026**
