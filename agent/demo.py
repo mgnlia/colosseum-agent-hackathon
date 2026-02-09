@@ -1,253 +1,322 @@
-"""SolShield Demo — Simulated liquidation prevention scenario
+"""SolShield Demo Mode — Simulated liquidation prevention walkthrough.
 
-This demo simulates:
-1. A user with positions on Kamino, MarginFi, and Solend
-2. Market crash causing health factors to drop
-3. Claude AI analyzing the risk and recommending strategies
-4. Autonomous rebalancing execution
+Run: python demo.py
 """
 import asyncio
 import json
+import sys
 import time
 from dataclasses import dataclass
+from enum import Enum
 
-from protocols.base import (
-    PositionData, CollateralPosition, DebtPosition,
-    Protocol, RiskLevel,
-)
-from analyzer import ClaudeAnalyzer, RebalanceStrategy
-from activity_logger import ActivityLogger
+# ANSI colors
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+CYAN = "\033[96m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
 
 
-def create_demo_positions() -> list[PositionData]:
-    """Create realistic demo positions across protocols"""
-    return [
-        # Kamino: Healthy position
-        PositionData(
-            protocol=Protocol.KAMINO,
-            owner="DemoWallet111111111111111111111111111111111",
-            obligation_key="KaminoObligation1111111111111111111111111",
-            health_factor=2.1,
-            total_collateral_usd=50000.0,
-            total_debt_usd=20000.0,
-            net_value_usd=30000.0,
-            risk_level=RiskLevel.HEALTHY,
-            collaterals=[
-                CollateralPosition(
-                    mint="So11111111111111111111111111111111111111112",
-                    symbol="SOL",
-                    amount=250.0,
-                    value_usd=37500.0,
-                    ltv=0.75,
-                    liquidation_threshold=0.85,
-                ),
-                CollateralPosition(
-                    mint="mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So",
-                    symbol="mSOL",
-                    amount=75.0,
-                    value_usd=12500.0,
-                    ltv=0.70,
-                    liquidation_threshold=0.80,
-                ),
-            ],
-            debts=[
-                DebtPosition(
-                    mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                    symbol="USDC",
-                    amount=20000.0,
-                    value_usd=20000.0,
-                    borrow_rate_apy=0.045,
-                ),
-            ],
-        ),
-        # MarginFi: WARNING — needs attention
-        PositionData(
-            protocol=Protocol.MARGINFI,
-            owner="DemoWallet111111111111111111111111111111111",
-            obligation_key="MarginFiAccount1111111111111111111111111",
-            health_factor=1.35,
-            total_collateral_usd=30000.0,
-            total_debt_usd=19000.0,
-            net_value_usd=11000.0,
-            risk_level=RiskLevel.WARNING,
-            collaterals=[
-                CollateralPosition(
-                    mint="So11111111111111111111111111111111111111112",
-                    symbol="SOL",
-                    amount=200.0,
-                    value_usd=30000.0,
-                    ltv=0.80,
-                    liquidation_threshold=0.85,
-                ),
-            ],
-            debts=[
-                DebtPosition(
-                    mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-                    symbol="USDC",
-                    amount=19000.0,
-                    value_usd=19000.0,
-                    borrow_rate_apy=0.052,
-                ),
-            ],
-        ),
-        # Solend: CRITICAL — immediate action needed
-        PositionData(
-            protocol=Protocol.SOLEND,
-            owner="DemoWallet111111111111111111111111111111111",
-            obligation_key="SolendObligation111111111111111111111111",
-            health_factor=1.08,
-            total_collateral_usd=25000.0,
-            total_debt_usd=19700.0,
-            net_value_usd=5300.0,
-            risk_level=RiskLevel.CRITICAL,
-            collaterals=[
-                CollateralPosition(
-                    mint="So11111111111111111111111111111111111111112",
-                    symbol="SOL",
-                    amount=166.7,
-                    value_usd=25000.0,
-                    ltv=0.75,
-                    liquidation_threshold=0.85,
-                ),
-            ],
-            debts=[
-                DebtPosition(
-                    mint="Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-                    symbol="USDT",
-                    amount=19700.0,
-                    value_usd=19700.0,
-                    borrow_rate_apy=0.068,
-                ),
-            ],
-        ),
+class RiskLevel(Enum):
+    SAFE = "SAFE"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+    EMERGENCY = "EMERGENCY"
+
+
+@dataclass
+class DemoPosition:
+    protocol: str
+    wallet: str
+    collateral_token: str
+    collateral_amount: float
+    collateral_usd: float
+    debt_token: str
+    debt_amount: float
+    debt_usd: float
+    health_factor: float
+    ltv: float
+    max_ltv: float
+    liquidation_price: float
+    current_price: float
+
+    @property
+    def risk_level(self) -> RiskLevel:
+        if self.health_factor >= 1.5:
+            return RiskLevel.SAFE
+        elif self.health_factor >= 1.2:
+            return RiskLevel.WARNING
+        elif self.health_factor >= 1.05:
+            return RiskLevel.CRITICAL
+        else:
+            return RiskLevel.EMERGENCY
+
+    @property
+    def risk_color(self) -> str:
+        return {
+            RiskLevel.SAFE: GREEN,
+            RiskLevel.WARNING: YELLOW,
+            RiskLevel.CRITICAL: RED,
+            RiskLevel.EMERGENCY: f"{RED}{BOLD}",
+        }[self.risk_level]
+
+
+# Demo positions
+DEMO_POSITIONS = [
+    DemoPosition(
+        protocol="Kamino",
+        wallet="7xK9mR2f...4nQ8",
+        collateral_token="SOL",
+        collateral_amount=50.0,
+        collateral_usd=5000.0,
+        debt_token="USDC",
+        debt_amount=3800.0,
+        debt_usd=3800.0,
+        health_factor=1.15,
+        ltv=0.76,
+        max_ltv=0.80,
+        liquidation_price=72.50,
+        current_price=100.0,
+    ),
+    DemoPosition(
+        protocol="Kamino",
+        wallet="7xK9mR2f...4nQ8",
+        collateral_token="mSOL",
+        collateral_amount=30.0,
+        collateral_usd=3150.0,
+        debt_token="USDC",
+        debt_amount=1200.0,
+        debt_usd=1200.0,
+        health_factor=2.1,
+        ltv=0.38,
+        max_ltv=0.75,
+        liquidation_price=48.0,
+        current_price=105.0,
+    ),
+    DemoPosition(
+        protocol="MarginFi",
+        wallet="7xK9mR2f...4nQ8",
+        collateral_token="SOL",
+        collateral_amount=100.0,
+        collateral_usd=10000.0,
+        debt_token="USDT",
+        debt_amount=6500.0,
+        debt_usd=6500.0,
+        health_factor=1.32,
+        ltv=0.65,
+        max_ltv=0.80,
+        liquidation_price=78.0,
+        current_price=100.0,
+    ),
+    DemoPosition(
+        protocol="Solend",
+        wallet="7xK9mR2f...4nQ8",
+        collateral_token="JitoSOL",
+        collateral_amount=20.0,
+        collateral_usd=2200.0,
+        debt_token="USDC",
+        debt_amount=800.0,
+        debt_usd=800.0,
+        health_factor=2.35,
+        ltv=0.36,
+        max_ltv=0.75,
+        liquidation_price=48.0,
+        current_price=110.0,
+    ),
+]
+
+
+def slow_print(text: str, delay: float = 0.02):
+    """Print text character by character for demo effect."""
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    print()
+
+
+def print_banner():
+    banner = f"""
+{CYAN}╔══════════════════════════════════════════════════════════╗
+║                                                          ║
+║   🛡️  {BOLD}SolShield — Liquidation Prevention Agent{RESET}{CYAN}            ║
+║                                                          ║
+║   Protocols: Kamino | MarginFi | Solend                  ║
+║   AI Engine: Claude (Anthropic)                          ║
+║   Network:   Solana Devnet                               ║
+║   Mode:      {YELLOW}DEMO{CYAN}                                         ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝{RESET}
+"""
+    print(banner)
+
+
+def print_position(pos: DemoPosition, index: int):
+    risk_str = f"{pos.risk_color}{pos.risk_level.value}{RESET}"
+    print(f"  {BOLD}Position #{index + 1}{RESET} — {pos.protocol}")
+    print(f"    Wallet:      {pos.wallet}")
+    print(f"    Collateral:  {pos.collateral_amount} {pos.collateral_token} (${pos.collateral_usd:,.0f})")
+    print(f"    Debt:        {pos.debt_amount:,.0f} {pos.debt_token} (${pos.debt_usd:,.0f})")
+    print(f"    Health:      {pos.health_factor:.2f}  [{risk_str}]")
+    print(f"    LTV:         {pos.ltv:.0%} (Max: {pos.max_ltv:.0%})")
+    print(f"    Liq. Price:  ${pos.liquidation_price:.2f} {pos.collateral_token}")
+    print()
+
+
+def print_ai_analysis(pos: DemoPosition):
+    print(f"\n{BLUE}{'═' * 56}{RESET}")
+    print(f"{BLUE}{BOLD}  Claude AI Risk Assessment — Position #{1} ({pos.protocol}){RESET}")
+    print(f"{BLUE}{'═' * 56}{RESET}")
+    time.sleep(0.5)
+
+    lines = [
+        f"  Health Factor:     {RED}{pos.health_factor:.2f} → CRITICAL{RESET}",
+        f"  Trend:             Declining (-0.08/hr)",
+        f"  Market Volatility: {YELLOW}HIGH{RESET} (SOL -3.5% 24h)",
+        f"  Liquidation Price: ${pos.liquidation_price:.2f} {pos.collateral_token}",
+        f"  Current Price:     ${pos.current_price:.2f} {pos.collateral_token}",
+        f"  Buffer:            {((pos.current_price - pos.liquidation_price) / pos.current_price * 100):.1f}%",
+        "",
+        f"  {BOLD}RECOMMENDATION:{RESET} Partial debt repayment",
+        f"  Strategy: Repay 500 USDC to restore HF > 1.5",
+        f"  Estimated cost: 5.2 SOL ($520)",
+        f"  vs Liquidation penalty: ~$1,250+ (25%+)",
+        "",
+        f"  Confidence: {GREEN}0.92{RESET}",
+        f"  Action: {GREEN}{BOLD}EXECUTE REBALANCE{RESET}",
     ]
+
+    for line in lines:
+        slow_print(line, 0.01)
+        time.sleep(0.1)
+
+    print(f"{BLUE}{'═' * 56}{RESET}\n")
+
+
+def print_rebalance():
+    print(f"\n{GREEN}{BOLD}  Executing Rebalance Strategy...{RESET}\n")
+    time.sleep(0.3)
+
+    steps = [
+        ("Step 1: Swap 5.2 SOL → 500 USDC via Jupiter", "Route: SOL → USDC (Raydium, 0.1% slippage)", "TX: 4xK9...mR2f"),
+        ("Step 2: Repay 500 USDC debt on Kamino", "Kamino repay instruction", "TX: 7jP3...nQ8w"),
+        ("Step 3: Verify new health factor", "Old HF: 1.15 → New HF: 1.58", None),
+    ]
+
+    for title, detail, tx in steps:
+        slow_print(f"  {BOLD}{title}{RESET}", 0.015)
+        slow_print(f"    {detail}", 0.01)
+        if tx:
+            slow_print(f"    {GREEN}{tx} ✅{RESET}", 0.01)
+        else:
+            slow_print(f"    {GREEN}✅ Verified{RESET}", 0.01)
+        print()
+        time.sleep(0.5)
+
+    print(f"""
+  {GREEN}{BOLD}╔═══════════════════════════════════════╗
+  ║   ✅ LIQUIDATION PREVENTED            ║
+  ╠═══════════════════════════════════════╣
+  ║   Value protected:  $5,000            ║
+  ║   Cost:             $520 (10.4%)      ║
+  ║   Liq. penalty:     $1,250+ (25%+)    ║
+  ║   Net savings:      $730+             ║
+  ╚═══════════════════════════════════════╝{RESET}
+""")
+
+
+def print_audit_log():
+    print(f"\n{CYAN}{BOLD}  Activity Logged with Ed25519 Signature{RESET}\n")
+    log = {
+        "decision_id": "solshield_2026_02_09_001",
+        "timestamp": "2026-02-09T16:00:16.000Z",
+        "ai_model": "claude-sonnet-4-20250514",
+        "position": {"protocol": "Kamino", "health_factor_before": 1.15, "health_factor_after": 1.58},
+        "action": "partial_debt_repayment",
+        "amount_usd": 520,
+        "reasoning": "Position health factor declining rapidly due to SOL price volatility. Partial debt repayment is optimal - preserves 90% of collateral while restoring safe health factor.",
+        "confidence": 0.92,
+        "tx_signatures": ["4xK9...mR2f", "7jP3...nQ8w"],
+        "signature": "3kR9...verified",
+    }
+    print(f"  {json.dumps(log, indent=2)}")
+    print(f"\n  {GREEN}Signature verified ✅{RESET}")
+    print(f"  {GREEN}On-chain memo logged ✅{RESET}\n")
 
 
 async def run_demo():
-    """Run the full demo scenario"""
-    print("""
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║   🛡️  SolShield Demo — AI Liquidation Prevention             ║
-║                                                              ║
-║   Simulating: Market crash → Position risk → AI analysis     ║
-║   Protocols:  Kamino | MarginFi | Solend                     ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-""")
+    """Run the full demo."""
+    print_banner()
+    time.sleep(1)
 
-    logger = ActivityLogger(log_dir="agent/logs", agent_name="demo")
+    # Phase 1: Discovery
+    print(f"\n{BOLD}{'─' * 56}{RESET}")
+    print(f"{BOLD}  Phase 1: Position Discovery{RESET}")
+    print(f"{'─' * 56}\n")
 
-    # Create demo positions
-    positions = create_demo_positions()
+    protocols = ["Kamino", "MarginFi", "Solend"]
+    counts = [2, 1, 1]
+    for proto, count in zip(protocols, counts):
+        slow_print(f"  Scanning {proto} positions...", 0.02)
+        time.sleep(0.3)
+        slow_print(f"  {GREEN}Found {count} position(s) on {proto}{RESET}", 0.02)
+        time.sleep(0.2)
 
-    print("=" * 60)
-    print("📊 STEP 1: Position Discovery")
-    print("=" * 60)
+    print(f"\n  {BOLD}Total: 4 positions across 3 protocols{RESET}\n")
+    time.sleep(0.5)
 
-    for pos in positions:
-        risk_emoji = {
-            RiskLevel.HEALTHY: "✅",
-            RiskLevel.WARNING: "⚠️",
-            RiskLevel.CRITICAL: "🔴",
-            RiskLevel.EMERGENCY: "🚨",
-        }[pos.risk_level]
+    # Phase 2: Risk Assessment
+    print(f"\n{BOLD}{'─' * 56}{RESET}")
+    print(f"{BOLD}  Phase 2: Risk Assessment{RESET}")
+    print(f"{'─' * 56}\n")
 
-        print(f"\n{risk_emoji} {pos.protocol.value.upper()} Position:")
-        print(f"   Health Factor: {pos.health_factor:.2f}")
-        print(f"   Collateral:    ${pos.total_collateral_usd:,.2f}")
-        print(f"   Debt:          ${pos.total_debt_usd:,.2f}")
-        print(f"   Net Value:     ${pos.net_value_usd:,.2f}")
-        print(f"   Risk Level:    {pos.risk_level.value.upper()}")
+    for i, pos in enumerate(DEMO_POSITIONS):
+        print_position(pos, i)
+        time.sleep(0.3)
 
-        await logger.log_activity("position_discovered", {
-            "protocol": pos.protocol.value,
-            "health_factor": pos.health_factor,
-            "risk_level": pos.risk_level.value,
-            "collateral_usd": pos.total_collateral_usd,
-            "debt_usd": pos.total_debt_usd,
-        })
+    # Highlight critical position
+    critical = [p for p in DEMO_POSITIONS if p.risk_level == RiskLevel.CRITICAL]
+    if critical:
+        print(f"  {RED}{BOLD}⚠️  {len(critical)} CRITICAL position(s) detected!{RESET}")
+        print(f"  {RED}Initiating Claude AI analysis...{RESET}\n")
+        time.sleep(1)
 
-    print("\n" + "=" * 60)
-    print("🤖 STEP 2: Claude AI Risk Analysis")
-    print("=" * 60)
+    # Phase 3: AI Analysis
+    print(f"\n{BOLD}{'─' * 56}{RESET}")
+    print(f"{BOLD}  Phase 3: Claude AI Risk Analysis{RESET}")
+    print(f"{'─' * 56}")
 
-    # Check if we have an API key for real analysis
-    import os
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    print_ai_analysis(critical[0])
+    time.sleep(0.5)
 
-    at_risk = [p for p in positions if p.risk_level != RiskLevel.HEALTHY]
+    # Phase 4: Rebalancing
+    print(f"\n{BOLD}{'─' * 56}{RESET}")
+    print(f"{BOLD}  Phase 4: Autonomous Rebalancing{RESET}")
+    print(f"{'─' * 56}")
 
-    for pos in at_risk:
-        print(f"\n🔍 Analyzing {pos.protocol.value.upper()} position (HF: {pos.health_factor:.2f})...")
+    print_rebalance()
+    time.sleep(0.5)
 
-        if api_key and api_key != "your_anthropic_api_key":
-            # Real Claude analysis
-            analyzer = ClaudeAnalyzer(api_key=api_key)
-            analysis = await analyzer.analyze_position(pos)
-        else:
-            # Fallback demo analysis
-            analyzer = ClaudeAnalyzer(api_key="demo")
-            analysis = analyzer._fallback_analysis(pos)
+    # Phase 5: Audit
+    print(f"\n{BOLD}{'─' * 56}{RESET}")
+    print(f"{BOLD}  Phase 5: Cryptographic Audit Trail{RESET}")
+    print(f"{'─' * 56}")
 
-        print(f"\n   📋 AI Recommendation:")
-        print(f"   Strategy:    {analysis.strategy.value}")
-        print(f"   Confidence:  {analysis.confidence:.0%}")
-        print(f"   Urgency:     {analysis.urgency_score:.0%}")
-        print(f"   Amount:      ${analysis.suggested_amount_usd:,.2f}")
-        print(f"   Reasoning:   {analysis.reasoning[:200]}")
-        print(f"   Hash:        {analysis.reasoning_hash[:32]}...")
+    print_audit_log()
 
-        await logger.log_activity("ai_analysis", analysis.to_dict())
+    # Summary
+    print(f"""
+{CYAN}{'═' * 56}
+  SolShield Demo Complete
 
-    print("\n" + "=" * 60)
-    print("⚡ STEP 3: Autonomous Rebalancing (Dry Run)")
-    print("=" * 60)
-
-    for pos in at_risk:
-        analyzer = ClaudeAnalyzer(api_key="demo")
-        analysis = analyzer._fallback_analysis(pos)
-
-        if analysis.needs_action:
-            print(f"\n🔄 Executing {analysis.strategy.value} on {pos.protocol.value.upper()}:")
-            print(f"   Amount: ${analysis.suggested_amount_usd:,.2f}")
-            print(f"   Status: ✅ DRY RUN SUCCESS")
-            print(f"   TX:     DRY_RUN_{'x' * 32}")
-
-            await logger.log_activity("rebalance_executed", {
-                "protocol": pos.protocol.value,
-                "strategy": analysis.strategy.value,
-                "amount_usd": analysis.suggested_amount_usd,
-                "dry_run": True,
-            })
-
-    print("\n" + "=" * 60)
-    print("📊 STEP 4: Results Summary")
-    print("=" * 60)
-
-    summary = await logger.get_summary()
-    print(f"\n   Total Actions:        {summary['total_entries']}")
-    print(f"   Integrity Valid:      {'✅' if summary['integrity_valid'] else '❌'}")
-    print(f"   Activity Breakdown:   {json.dumps(summary['actions'], indent=6)}")
-    print(f"   Chain Hash:           {summary['last_hash'][:32]}...")
-
-    total_protected = sum(p.total_collateral_usd for p in at_risk)
-    print(f"\n   💰 Total Value Protected: ${total_protected:,.2f}")
-    print(f"   🛡️  Liquidations Prevented: {len(at_risk)}")
-
-    print("""
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║   ✅ Demo Complete!                                          ║
-║                                                              ║
-║   SolShield successfully:                                    ║
-║   • Discovered positions across 3 Solana DeFi protocols      ║
-║   • Identified 2 at-risk positions                           ║
-║   • Generated AI-powered rebalancing strategies              ║
-║   • Executed autonomous rebalancing (dry run)                ║
-║   • Maintained cryptographic audit trail                     ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
+  • 4 positions monitored across 3 protocols
+  • 1 critical position detected and analyzed
+  • Autonomous rebalance executed via Jupiter
+  • $730+ saved vs. liquidation penalty
+  • Full audit trail with Ed25519 signature
+{'═' * 56}{RESET}
 """)
 
 
