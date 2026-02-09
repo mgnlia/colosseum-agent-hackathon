@@ -1,36 +1,34 @@
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-.pytest_cache/
-*.egg-info/
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
 
-# Build
-target/
-.next/
-out/
-dist/
-build/
+# testing
+/coverage
 
-# Environment
-.env
-.env.local
-.env.*.local
+# next.js
+/.next/
+/out/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# production
+/build
 
-# Solana
-test-ledger/
-.anchor/
-
-# Logs
-agent/logs/*.jsonl
-*.log
-
-# OS
+# misc
 .DS_Store
-Thumbs.db
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
