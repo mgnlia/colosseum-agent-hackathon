@@ -1,52 +1,69 @@
-# AI Attribution Log — SolShield
+# AI Attribution Log
 
 ## Overview
 
-SolShield was built by an autonomous AI agent (Claude, by Anthropic) as part of the Colosseum Agent Hackathon 2026. This document provides full transparency on AI involvement.
+SolShield uses AI in two ways:
 
-## AI Usage
+1. **Development**: Claude (Anthropic) assisted with code generation and architecture design
+2. **Runtime**: Claude claude-sonnet-4-20250514 powers the real-time risk analysis engine
 
-### Code Generation
-- **Model:** Claude (Anthropic) via Claude Code CLI
-- **Scope:** All source code, documentation, and configuration files
-- **Human oversight:** Architecture direction and review by human operator
+## Development AI Usage
 
-### Runtime AI (Agent Core)
-- **Model:** Claude Sonnet 4 (`claude-sonnet-4-20250514`)
-- **Purpose:** Real-time DeFi position risk analysis and rebalancing strategy selection
-- **Decision logging:** Every AI decision is logged with full reasoning traces in `agent/logs/`
-- **Cryptographic verification:** Ed25519 signatures on all activity logs
+| Component | AI Contribution | Human Review |
+|-----------|----------------|--------------|
+| Anchor Programs | Architecture + implementation | Reviewed + tested |
+| Protocol Adapters | Initial scaffolding | Customized for each protocol |
+| AI Analyzer | Prompt engineering + fallback logic | Validated against test cases |
+| Dashboard | Component generation | UI/UX refinement |
+| Demo Script | Narrative flow | Verified accuracy |
 
-## Build Timeline
+## Runtime AI Usage
 
-| Date | Activity | AI Involvement |
-|------|----------|---------------|
-| Feb 2, 2026 | Hackathon start | - |
-| Feb 7, 2026 | Initial architecture design | Claude: full code generation |
-| Feb 8, 2026 | Protocol adapters (Kamino, MarginFi, Solend) | Claude: implementation |
-| Feb 9, 2026 | Anchor programs + agent core | Claude: implementation |
-| Feb 9, 2026 | Platform registration + submission | Claude: autonomous registration |
-| Feb 9, 2026 | Forum engagement + community interaction | Claude: content generation |
+### Claude Risk Analyzer
 
-## Decision Transparency
+The agent uses Claude claude-sonnet-4-20250514 for real-time position analysis:
 
-Every rebalancing decision made by SolShield includes:
+- **Input**: Position data (health factor, collateral, debt, market context)
+- **Output**: Risk assessment + recommended strategy + confidence score
+- **Temperature**: 0.1 (low, for consistent risk analysis)
+- **Fallback**: Rule-based analyzer if AI call fails
 
-1. **Input data:** On-chain position state (health factor, LTV, collateral, debt)
-2. **Market context:** Token prices, volatility metrics, protocol utilization
-3. **AI reasoning:** Full text explanation of why the action was chosen
-4. **Confidence score:** 0.0-1.0 indicating model certainty
-5. **Alternative strategies:** Other options considered and why they were rejected
-6. **Cryptographic signature:** Ed25519 signature for tamper-proof audit trail
+### Decision Transparency
+
+Every AI decision includes:
+- Full reasoning trace (stored in `agent/logs/`)
+- SHA-256 hash of reasoning (recorded on-chain)
+- Confidence score (only actions with ≥0.7 confidence are executed)
+- Strategy recommendation with estimated amounts
+
+### Verification
+
+```bash
+# Verify activity log integrity
+cd agent
+python -c "
+import asyncio
+from activity_logger import ActivityLogger
+logger = ActivityLogger()
+result = asyncio.run(logger.verify_integrity())
+print(f'Valid: {result[0]}, Entries: {result[1]}')
+"
+```
+
+## Model Details
+
+| Parameter | Value |
+|-----------|-------|
+| Model | claude-sonnet-4-20250514 |
+| Provider | Anthropic |
+| Max Tokens | 2048 |
+| Temperature | 0.1 |
+| Use Case | DeFi risk analysis |
 
 ## Ethical Considerations
 
-- SolShield operates in **dry-run mode by default** — no funds are moved without explicit opt-in
-- All AI decisions are logged and auditable
-- The agent cannot access user funds without explicit wallet delegation
-- Emergency stop mechanism allows immediate agent shutdown
-- Health factor thresholds are conservative to avoid unnecessary actions
-
-## License
-
-MIT — All code is open source and available for review.
+- Agent operates in dry-run mode by default
+- All actions require minimum 0.7 confidence threshold
+- Conservative bias: false positives (unnecessary rebalances) are preferred over false negatives (missed liquidations)
+- Full audit trail for accountability
+- User can pause/resume monitoring at any time

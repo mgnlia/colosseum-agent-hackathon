@@ -2,64 +2,123 @@
 
 ## System Overview
 
-SolShield is a three-layer system:
-
-### Layer 1: On-Chain (Anchor Programs)
-- **SolShield Program** — Position registry, health tracking, rebalance records
-- Stores all monitored positions as PDAs
-- Records every rebalance with AI reasoning hash for auditability
-- Access-controlled: only the registered agent authority can update positions
-
-### Layer 2: AI Agent (Python)
-- **Position Monitor** — Queries Kamino, MarginFi, Solend via RPC
-- **Claude Analyzer** — Risk assessment using Claude 3.5 Sonnet
-- **Rebalance Executor** — Jupiter swaps + protocol interactions
-- **Activity Logger** — Cryptographic hash-chain audit trail
-
-### Layer 3: Dashboard (Next.js)
-- Real-time position visualization
-- Risk alerts and history
-- Agent activity feed
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        SolShield AI Agent                           │
+│                                                                     │
+│  ┌──────────────┐  ┌───────────────┐  ┌──────────────┐            │
+│  │   Position    │  │   Claude AI   │  │   Rebalance  │            │
+│  │   Monitor     │→ │   Analyzer    │→ │   Executor   │            │
+│  │              │  │               │  │              │            │
+│  │ • Kamino     │  │ • Risk Score  │  │ • Jupiter    │            │
+│  │ • MarginFi   │  │ • Strategy    │  │ • AgentWallet│            │
+│  │ • Solend     │  │ • Confidence  │  │ • Dry Run    │            │
+│  └──────────────┘  └───────────────┘  └──────────────┘            │
+│         ↕                  ↕                  ↕                    │
+│  ┌─────────────────────────────────────────────────────┐          │
+│  │            Activity Logger (Hash Chain)              │          │
+│  │  [Entry₀] → [Entry₁] → [Entry₂] → ... → [Entryₙ]  │          │
+│  │   hash₀  ←   hash₁  ←   hash₂  ← ... ←   hashₙ   │          │
+│  └─────────────────────────────────────────────────────┘          │
+└─────────────────────────────────────────────────────────────────────┘
+         ↕                                          ↕
+┌─────────────────────┐              ┌──────────────────────────┐
+│   Solana Blockchain  │              │   Dashboard (Next.js)    │
+│                     │              │                          │
+│  ┌───────────────┐  │              │  • Position Cards        │
+│  │  SolShield    │  │              │  • Health Gauges         │
+│  │  Anchor       │  │              │  • Activity Feed         │
+│  │  Program      │  │              │  • Agent Status          │
+│  │               │  │              │  • Stats Panel           │
+│  │  • Registry   │  │              │  • Wallet Connect        │
+│  │  • Audit Log  │  │              └──────────────────────────┘
+│  │  • Rebalance  │  │
+│  │    Records    │  │
+│  └───────────────┘  │
+│                     │
+│  ┌──────┐ ┌──────┐ │
+│  │Kamino│ │MarFi │ │
+│  └──────┘ └──────┘ │
+│  ┌──────┐ ┌──────┐ │
+│  │Solend│ │Jupiter│ │
+│  └──────┘ └──────┘ │
+└─────────────────────┘
+```
 
 ## Data Flow
 
+### 1. Position Discovery
 ```
-1. Monitor polls Solana RPC every 30s
-2. Fetches obligation/margin accounts from lending protocols
-3. Calculates health factors
-4. If health < threshold → sends to Claude for analysis
-5. Claude returns strategy + reasoning
-6. Executor builds and signs transaction via AgentWallet
-7. Records rebalance on-chain with reasoning hash
-8. Activity logger maintains tamper-evident audit trail
+Agent Loop (every 30s)
+  → For each watched wallet:
+    → KaminoAdapter.get_positions(wallet)
+      → RPC: getProgramAccounts(KLend program, filter by owner)
+      → Parse obligation accounts
+      → Calculate health factor
+    → MarginFiAdapter.get_positions(wallet)
+      → RPC: getProgramAccounts(MarginFi program)
+      → Parse margin accounts
+    → SolendAdapter.get_positions(wallet)
+      → RPC: getProgramAccounts(Solend program)
+      → Parse obligation accounts
+  → Collect all PositionData objects
+  → Filter: risk_level in (WARNING, CRITICAL, EMERGENCY)
 ```
+
+### 2. AI Risk Analysis
+```
+For each at-risk position:
+  → Build analysis prompt with:
+    - Position details (HF, collateral, debt)
+    - Collateral breakdown (token, LTV, liq threshold)
+    - Debt breakdown (token, APY)
+    - Market context (optional)
+  → Claude API call (temperature=0.1)
+  → Parse JSON response → AnalysisResult
+  → If parse fails → fallback_analysis (rule-based)
+  → Log to ActivityLogger
+```
+
+### 3. Execution Decision
+```
+If analysis.needs_action AND analysis.confidence >= 0.7:
+  → Select execution strategy:
+    COLLATERAL_TOP_UP → Jupiter swap USDC→collateral token
+    DEBT_REPAYMENT    → Jupiter swap + protocol repay
+    COLLATERAL_SWAP   → Jupiter swap volatile→stable
+    EMERGENCY_UNWIND  → Full position closure
+  → Execute via AgentWallet (or dry-run)
+  → Record on-chain via Anchor program
+  → Log result to ActivityLogger
+```
+
+## On-Chain Program (Anchor)
+
+### Accounts
+
+| Account | Seeds | Description |
+|---------|-------|-------------|
+| `ProtocolState` | `["protocol-state"]` | Global config + stats |
+| `MonitoredPosition` | `["position", owner, obligation_key]` | Per-position monitoring data |
+| `RebalanceRecord` | `["rebalance", position, count]` | Audit record per rebalance |
+
+### Instructions
+
+| Instruction | Signer | Description |
+|-------------|--------|-------------|
+| `initialize` | Authority | Set up protocol config |
+| `register_position` | Owner | Start monitoring a position |
+| `update_health` | Agent | Update health factor data |
+| `record_rebalance` | Agent | Log a rebalance action |
+| `pause_position` | Owner | Pause monitoring |
+| `resume_position` | Owner | Resume monitoring |
+| `close_position` | Owner | Stop monitoring + reclaim rent |
 
 ## Security Model
 
-- Agent authority is a separate keypair from user wallets
-- Users explicitly register positions for monitoring
-- All AI decisions are hashed and stored on-chain
-- Activity log uses SHA-256 hash chain for integrity
-- Emergency pause allows users to stop monitoring instantly
-
-## Protocol Integration Details
-
-### Kamino (KLend)
-- Program: `KLend2g3cP87ber41GRRLYPqxQ1p57Y5MR8D68Lds`
-- Obligation accounts: 1300 bytes, owner at offset 8
-- Health factor: weighted collateral / total debt
-
-### MarginFi
-- Program: `MFv2hWf31Z9kbCa1snEPYctwafyhdJnV4QSdzCrRKg`
-- Margin accounts: authority at offset 40
-- Uses bank-based lending with shares model
-
-### Solend
-- Program: `So1endDq2YkqhipRh3WViPa8hFMqRV1JimkXg5H2RGD`
-- Obligation accounts: 916 bytes, owner at offset 2
-- u128 deposited/borrowed values at offset 66
-
-### Jupiter (Swaps)
-- Quote API: `https://quote-api.jup.ag/v6/quote`
-- Swap API: `https://quote-api.jup.ag/v6/swap`
-- Used for collateral rebalancing operations
+1. **Agent Authority**: Only the designated agent wallet can update health and record rebalances
+2. **Owner Control**: Users can pause/resume/close their own positions
+3. **Cooldown**: Minimum 60s between rebalances to prevent rapid-fire actions
+4. **Confidence Threshold**: AI must be ≥70% confident to execute
+5. **Dry Run Default**: Agent starts in dry-run mode; explicit `--live` flag required
+6. **Hash Chain**: Activity log uses SHA-256 hash chain for tamper detection

@@ -2,35 +2,35 @@
 node_modules/
 __pycache__/
 *.pyc
-.venv/
-venv/
+.pytest_cache/
+*.egg-info/
+
+# Build
+target/
+.next/
+out/
+dist/
+build/
 
 # Environment
 .env
 .env.local
-
-# Build artifacts
-target/
-dist/
-build/
-.next/
-
-# Anchor
-programs/target/
-.anchor/
+.env.*.local
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# Solana
+test-ledger/
+.anchor/
+
+# Logs
+agent/logs/*.jsonl
+*.log
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-agent/logs/*.json
-
-# Keys (NEVER commit)
-*.keypair
-*.key
