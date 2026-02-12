@@ -1,0 +1,13 @@
+#!/bin/bash
+echo "=== Checking available tools ==="
+which curl 2>&1 || echo "curl: NOT FOUND"
+which wget 2>&1 || echo "wget: NOT FOUND"
+which npx 2>&1 || echo "npx: NOT FOUND"
+which node 2>&1 || echo "node: NOT FOUND"
+which npm 2>&1 || echo "npm: NOT FOUND"
+which python3 2>&1 || echo "python3: NOT FOUND"
+which uv 2>&1 || echo "uv: NOT FOUND"
+echo "=== Node version ==="
+node --version 2>&1 || echo "node not available"
+echo "=== NPM version ==="
+npm --version 2>&1 || echo "npm not available"
