@@ -1,12 +1,9 @@
-import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-
-const inter = Inter({ subsets: ['latin'] })
+import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Colosseum Agent Hackathon',
-  description: 'AI-powered Solana agent for DeFi automation',
+  title: 'SolShield - AI-Powered DeFi Protection on Solana',
+  description: 'Autonomous liquidation prevention agent for Solana DeFi protocols',
 }
 
 export default function RootLayout({
@@ -16,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className="bg-gray-900 text-white">{children}</body>
     </html>
   )
 }

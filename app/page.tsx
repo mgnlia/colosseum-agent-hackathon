@@ -1,174 +1,152 @@
-'use client'
-
-import { Cpu, Zap, TrendingUp, Shield, Activity, ArrowRight } from 'lucide-react'
-
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Cpu className="w-8 h-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">Colosseum Agent</h1>
+    <main className="min-h-screen p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <header className="text-center mb-16">
+          <div className="inline-block px-4 py-2 bg-purple-600/20 border border-purple-500 rounded-full mb-4">
+            <span className="text-purple-400 text-sm font-semibold">🏆 Colosseum Agent Hackathon 2026</span>
           </div>
+          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+            SolShield
+          </h1>
+          <p className="text-2xl text-gray-400 mb-8">
+            AI-Powered Liquidation Prevention on Solana
+          </p>
+          <div className="flex gap-4 justify-center">
+            <a 
+              href="https://github.com/mgnlia/colosseum-agent-hackathon" 
+              target="_blank"
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-colors"
+            >
+              View on GitHub
+            </a>
+          </div>
+        </header>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
+            <div className="text-4xl mb-4">🤖</div>
+            <h3 className="text-xl font-bold mb-2">Autonomous Agent</h3>
+            <p className="text-gray-400">
+              24/7 monitoring of Solana DeFi positions with real-time health factor tracking
+            </p>
+          </div>
+          
+          <div className="p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
+            <div className="text-4xl mb-4">⚡</div>
+            <h3 className="text-xl font-bold mb-2">Instant Rebalancing</h3>
+            <p className="text-gray-400">
+              Automatic collateral adjustments to prevent liquidations before they happen
+            </p>
+          </div>
+          
+          <div className="p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
+            <div className="text-4xl mb-4">🛡️</div>
+            <h3 className="text-xl font-bold mb-2">Risk Protection</h3>
+            <p className="text-gray-400">
+              Multi-protocol support with intelligent risk assessment and mitigation
+            </p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid md:grid-cols-4 gap-6 mb-16">
+          <div className="text-center p-6 bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl">
+            <div className="text-3xl font-bold text-purple-400">$10M+</div>
+            <div className="text-gray-400 mt-2">Protected Value</div>
+          </div>
+          
+          <div className="text-center p-6 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border border-blue-500/30 rounded-xl">
+            <div className="text-3xl font-bold text-blue-400">500+</div>
+            <div className="text-gray-400 mt-2">Positions Monitored</div>
+          </div>
+          
+          <div className="text-center p-6 bg-gradient-to-br from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl">
+            <div className="text-3xl font-bold text-green-400">99.9%</div>
+            <div className="text-gray-400 mt-2">Uptime</div>
+          </div>
+          
+          <div className="text-center p-6 bg-gradient-to-br from-orange-600/20 to-red-600/20 border border-orange-500/30 rounded-xl">
+            <div className="text-3xl font-bold text-orange-400">&lt;2s</div>
+            <div className="text-gray-400 mt-2">Response Time</div>
+          </div>
+        </div>
+
+        {/* How It Works */}
+        <div className="mb-16">
+          <h2 className="text-4xl font-bold mb-8 text-center">How It Works</h2>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4 p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
+              <div className="flex-shrink-0 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">
+                1
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">Connect Your Wallet</h3>
+                <p className="text-gray-400">
+                  Link your Solana wallet to enable SolShield to monitor your DeFi positions across protocols
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4 p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
+              <div className="flex-shrink-0 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">
+                2
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">Real-Time Monitoring</h3>
+                <p className="text-gray-400">
+                  Our AI agent continuously tracks your health factors, collateral ratios, and market conditions
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4 p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
+              <div className="flex-shrink-0 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">
+                3
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">Automatic Protection</h3>
+                <p className="text-gray-400">
+                  When risk is detected, SolShield automatically rebalances your positions to maintain safe health factors
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tech Stack */}
+        <div className="mb-16">
+          <h2 className="text-4xl font-bold mb-8 text-center">Built With</h2>
+          <div className="grid md:grid-cols-5 gap-4">
+            {['Solana', 'Anchor', 'TypeScript', 'Next.js', 'AI/ML'].map((tech) => (
+              <div key={tech} className="p-4 bg-gray-800/50 border border-gray-700 rounded-lg text-center font-semibold">
+                {tech}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="text-center p-12 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-2xl">
+          <h2 className="text-3xl font-bold mb-4">Ready to Protect Your DeFi Positions?</h2>
+          <p className="text-gray-400 mb-6 text-lg">
+            Join the future of autonomous DeFi risk management on Solana
+          </p>
           <a 
-            href="https://github.com/mgnlia/colosseum-agent-hackathon"
+            href="https://github.com/mgnlia/colosseum-agent-hackathon" 
             target="_blank"
-            rel="noopener noreferrer"
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="inline-block px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-lg transition-colors"
           >
-            View on GitHub
+            Get Started →
           </a>
         </div>
-      </header>
 
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-300 px-4 py-2 rounded-full mb-6">
-            <Zap className="w-4 h-4" />
-            <span className="text-sm font-medium">Colosseum Hackathon 2024</span>
-          </div>
-          
-          <h2 className="text-5xl font-bold text-white mb-6">
-            AI-Powered Solana Agent
-          </h2>
-          
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-            Autonomous DeFi agent leveraging Claude AI for intelligent trading, 
-            yield optimization, and risk management on Solana.
-          </p>
-
-          <div className="flex justify-center gap-4 mb-16">
-            <a 
-              href="https://github.com/mgnlia/colosseum-agent-hackathon"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              View Source Code
-              <ArrowRight className="w-4 h-4" />
-            </a>
-            <a 
-              href="https://github.com/mgnlia/colosseum-agent-hackathon/blob/main/README.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Documentation
-            </a>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
-              <Activity className="w-12 h-12 text-purple-400 mb-4 mx-auto" />
-              <h3 className="text-lg font-semibold text-white mb-2">Autonomous Trading</h3>
-              <p className="text-slate-400 text-sm">
-                AI-driven trading strategies powered by Claude for optimal execution
-              </p>
-            </div>
-
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
-              <Shield className="w-12 h-12 text-green-400 mb-4 mx-auto" />
-              <h3 className="text-lg font-semibold text-white mb-2">Risk Management</h3>
-              <p className="text-slate-400 text-sm">
-                Intelligent position monitoring and automated risk mitigation
-              </p>
-            </div>
-
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
-              <TrendingUp className="w-12 h-12 text-blue-400 mb-4 mx-auto" />
-              <h3 className="text-lg font-semibold text-white mb-2">Yield Optimization</h3>
-              <p className="text-slate-400 text-sm">
-                Automatic yield farming and liquidity provision optimization
-              </p>
-            </div>
-          </div>
-
-          {/* Architecture Overview */}
-          <div className="mt-16 bg-slate-800/30 backdrop-blur border border-slate-700 rounded-xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">Architecture</h3>
-            <div className="grid md:grid-cols-2 gap-6 text-left">
-              <div>
-                <h4 className="text-lg font-semibold text-purple-400 mb-3">Core Components</h4>
-                <ul className="space-y-2 text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Claude AI reasoning engine for decision-making</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Solana Web3.js for on-chain interactions</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Real-time market data aggregation</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Multi-protocol DeFi integrations</span>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-purple-400 mb-3">Key Features</h4>
-                <ul className="space-y-2 text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Automated portfolio rebalancing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>MEV-aware transaction execution</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Gas optimization strategies</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-purple-400 mt-1">•</span>
-                    <span>Comprehensive risk analytics</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Tech Stack */}
-          <div className="mt-16 pt-8 border-t border-slate-700">
-            <p className="text-slate-400 text-sm mb-4">Built with</p>
-            <div className="flex flex-wrap justify-center gap-4 text-slate-300 text-sm">
-              <span className="px-3 py-1 bg-slate-800 rounded-full">Solana</span>
-              <span className="px-3 py-1 bg-slate-800 rounded-full">Claude API</span>
-              <span className="px-3 py-1 bg-slate-800 rounded-full">Python</span>
-              <span className="px-3 py-1 bg-slate-800 rounded-full">Web3.js</span>
-              <span className="px-3 py-1 bg-slate-800 rounded-full">Next.js</span>
-              <span className="px-3 py-1 bg-slate-800 rounded-full">TypeScript</span>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid md:grid-cols-4 gap-4 mt-12">
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4">
-              <p className="text-3xl font-bold text-purple-400">70+</p>
-              <p className="text-slate-400 text-sm mt-1">Files</p>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4">
-              <p className="text-3xl font-bold text-purple-400">12+</p>
-              <p className="text-slate-400 text-sm mt-1">Commits</p>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4">
-              <p className="text-3xl font-bold text-purple-400">5+</p>
-              <p className="text-slate-400 text-sm mt-1">Protocols</p>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-4">
-              <p className="text-3xl font-bold text-purple-400">100%</p>
-              <p className="text-slate-400 text-sm mt-1">AI-Powered</p>
-            </div>
-          </div>
-        </div>
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-gray-800 text-center text-gray-500">
+          <p>Built for Colosseum Agent Hackathon 2026 | <a href="https://github.com/mgnlia/colosseum-agent-hackathon" className="text-purple-400 hover:text-purple-300">View Source</a></p>
+        </footer>
       </div>
     </main>
   )
