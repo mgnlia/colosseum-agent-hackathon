@@ -1,0 +1,25 @@
+name: Deploy SolShield Dashboard to Vercel
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'dashboard/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Deploy to Vercel
+        working-directory: ./dashboard
+        run: node deploy-node.js
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
