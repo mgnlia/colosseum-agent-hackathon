@@ -1,10 +1,10 @@
-# 🛡️ SolShield Agent Core (Legacy Repo Name)
+# 🛡️ SolShield Agent Core (Legacy Repository Name)
 
-> **DeveloperWeek 2026 submission support repo**
+> **DeveloperWeek 2026 submission support repository**
 >
-> This repository keeps the historical name `colosseum-agent-hackathon`, but the active branding and submission context are now **SolShield — DeveloperWeek 2026**.
+> The repository name `colosseum-agent-hackathon` is retained for history, but all active submission context is **SolShield — DeveloperWeek 2026**.
 
-## What this repo contains
+## What this repository contains
 
 Core backend/agent logic used by SolShield:
 
@@ -15,15 +15,16 @@ Core backend/agent logic used by SolShield:
 
 ## Submission context
 
-For the official DeveloperWeek package, use:
+Use these links as the primary DeveloperWeek references:
 
-- **Primary submission repo:** https://github.com/mgnlia/devweek-2026-submission
+- **Submission package:** https://github.com/mgnlia/devweek-2026-submission
 - **Frontend demo site repo:** https://github.com/mgnlia/liquidation-agent-frontend
 
-## Notes
+## Legacy naming note
 
-- This repo remains public for traceability and prior work continuity.
-- Branding has been normalized to DeveloperWeek 2026 in submission-facing materials.
+- This repository remains public for traceability and prior work continuity.
+- Submission-facing docs are normalized to DeveloperWeek 2026 branding.
+- The legacy repo name does **not** indicate active Colosseum submission status.
 
 ## License
 
